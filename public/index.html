@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Post Collector</title>
+  <meta name="description" content="Collect recent public posts from a Facebook page with Apify, with SHA-256 integrity checks.">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/zip.js" defer></script>
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true">
+        <rect x="1" y="1" width="30" height="30" rx="8" />
+        <path d="M9 11h14M9 16h14M9 21h8" />
+        <circle cx="23" cy="21" r="3.2" />
+      </svg>
+      <div>
+        <h1>Post Collector</h1>
+        <p class="tagline">Public Facebook pages · Apify · SHA-256 integrity</p>
+      </div>
+    </div>
+    <div class="topbar-actions">
+      <span id="mode-badge" class="mode-badge" hidden></span>
+      <button id="theme-toggle" class="icon-btn" type="button" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9z" /></svg>
+      </button>
+    </div>
+  </header>
+
+  <main>
+    <!-- Shown only when DEMO_ACCESS_CODE is set and not yet entered -->
+    <section id="gate" class="panel gate" aria-labelledby="gate-title" hidden>
+      <h2 id="gate-title" class="panel-title">Enter access code</h2>
+      <p class="muted">This demo is private. Enter the access code you were given to continue.</p>
+      <form id="gate-form" class="collect-form" autocomplete="off">
+        <div class="field grow">
+          <label for="gate-code">Access code</label>
+          <input id="gate-code" type="password" required autocomplete="current-password">
+        </div>
+        <button class="btn-primary" type="submit"><span>Continue</span></button>
+      </form>
+      <p id="gate-error" class="gate-error" role="alert" hidden></p>
+    </section>
+
+    <div id="app" class="layout" hidden>
+      <aside class="side" aria-label="Controls">
+        <section class="panel p-collect" aria-labelledby="collect-title">
+          <h2 id="collect-title" class="panel-title">Collect recent posts</h2>
+          <form id="collect-form" class="collect-form" autocomplete="off">
+            <div class="field field-page">
+              <label for="page-url">Facebook page URL or name</label>
+              <input id="page-url" name="pageUrl" type="text" spellcheck="false" placeholder="https://www.facebook.com/pagename" required>
+            </div>
+            <div class="field field-count">
+              <label for="post-count">Posts <span id="cost-estimate" class="cost-estimate"></span></label>
+              <input id="post-count" name="count" type="number" min="1" step="1" inputmode="numeric" list="post-count-options" required>
+              <datalist id="post-count-options"></datalist>
+            </div>
+            <button id="start-btn" class="btn-primary" type="submit">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" /></svg>
+              <span>Start</span>
+            </button>
+          </form>
+          <div class="allowlist">
+            <span class="muted">Try a page:</span>
+            <span id="allowlist-chips" class="chips"></span>
+          </div>
+        </section>
+
+        <section class="panel p-pipeline" aria-labelledby="pipeline-title">
+          <div class="panel-head">
+            <h2 id="pipeline-title" class="panel-title">Pipeline</h2>
+          </div>
+          <span id="apify-status" class="apify-status" hidden></span>
+          <ol id="stepper" class="stepper"></ol>
+        </section>
+
+        <section class="panel log-panel" aria-labelledby="log-title">
+          <div class="panel-head">
+            <h2 id="log-title" class="panel-title">Activity log</h2>
+            <span class="muted small">Live from the server and this browser</span>
+          </div>
+          <div id="log" class="log" role="log" aria-live="polite">
+            <div class="log-empty muted">Press Start to begin. Progress appears here.</div>
+          </div>
+        </section>
+      </aside>
+
+      <div class="content">
+        <section id="failure" class="failure" role="alert" hidden></section>
+
+        <section id="tiles" class="tiles" aria-label="Summary" hidden>
+          <div class="tile"><span class="tile-label">Posts</span><span id="tile-posts" class="tile-value">–</span><span id="tile-posts-sub" class="tile-sub">&nbsp;</span></div>
+          <div class="tile"><span class="tile-label">Images</span><span id="tile-images" class="tile-value">–</span><span id="tile-images-sub" class="tile-sub">&nbsp;</span></div>
+          <div class="tile"><span class="tile-label">SHA-256 hashes</span><span id="tile-hashes" class="tile-value">–</span><span id="tile-hashes-sub" class="tile-sub">&nbsp;</span></div>
+          <div class="tile" id="tile-integrity-box"><span class="tile-label">Integrity</span><span id="tile-integrity" class="tile-value">–</span><span id="tile-integrity-sub" class="tile-sub">&nbsp;</span></div>
+          <div class="tile"><span class="tile-label">Apify run cost</span><span id="tile-cost" class="tile-value">–</span><span id="tile-cost-sub" class="tile-sub">&nbsp;</span></div>
+        </section>
+
+        <section id="empty-state" class="panel empty-state">
+          <h2 class="empty-title">How it works</h2>
+          <ol class="how">
+            <li><b>1</b><span><strong>Enter a public Facebook page</strong> and how many recent posts to collect.</span></li>
+            <li><b>2</b><span><strong>Apify scrapes the page.</strong> Follow every step live in the pipeline.</span></li>
+            <li><b>3</b><span><strong>Get verified data:</strong> posts, images and SHA-256 fingerprints, downloadable as a ZIP.</span></li>
+          </ol>
+          <p class="muted small">Collected posts will appear here.</p>
+        </section>
+
+        <section id="results" class="results" aria-labelledby="results-title" hidden>
+          <div class="results-head">
+            <div>
+              <h2 id="results-title" class="results-title">Collected posts <span id="results-count" class="muted"></span></h2>
+              <p class="muted small">Kept in this browser tab only. Nothing is stored on the server. Download the ZIP to keep it.</p>
+            </div>
+            <div class="results-links">
+              <button id="download-zip" class="btn-primary" type="button">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12 M7 10l5 5 5-5 M5 21h14" /></svg>
+                <span>Download ZIP</span>
+              </button>
+              <a id="open-posts-json" class="btn-secondary" target="_blank" rel="noopener">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z M14 3v6h6" /></svg>
+                posts.json
+              </a>
+              <a id="open-manifest" class="btn-secondary" target="_blank" rel="noopener">posts.json.sha256</a>
+            </div>
+          </div>
+          <div id="cards" class="cards"></div>
+        </section>
+
+        <footer class="footnote muted small">
+          Collects public post data only (no login, no cookies). Only collect from pages you are allowed to collect from.
+          Each run is capped at the maximum cost shown next to the post count.
+        </footer>
+      </div>
+    </div>
+  </main>
+
+  <dialog id="record-dialog" class="record-dialog" aria-labelledby="record-title">
+    <div class="dialog-head">
+      <div>
+        <h2 id="record-title">Stored record</h2>
+        <p id="record-subtitle" class="muted small"></p>
+      </div>
+      <button id="record-close" class="icon-btn" type="button" aria-label="Close">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
+      </button>
+    </div>
+    <div id="record-body" class="dialog-body"></div>
+    <div class="dialog-foot">
+      <span id="record-verify-status" class="muted small"></span>
+      <button id="record-reverify" class="btn-primary" type="button">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7 3v6c0 4.5-3 8-7 9-4-1-7-4.5-7-9V6z M9 12l2 2 4-4" /></svg>
+        <span>Re-verify stored files</span>
+      </button>
+    </div>
+  </dialog>
+</body>
+</html>

@@ -1,0 +1,23 @@
+{
+  "name": "facebook-apify-poc",
+  "version": "1.0.0",
+  "description": "Demo: collect posts from public Facebook pages via Apify, with SHA-256 integrity; deployable to Vercel",
+  "scripts": {
+    "check-config": "node src/config.js",
+    "check-apify": "node src/check-apify.js",
+    "raw": "node src/run-raw.js",
+    "test": "node --test test/",
+    "collect": "node src/collect.js",
+    "verify": "node src/verify.js",
+    "ui": "node src/server.js"
+  },
+  "license": "UNLICENSED",
+  "type": "commonjs",
+  "private": true,
+  "engines": {
+    "node": ">=20.12"
+  },
+  "dependencies": {
+    "apify-client": "^2.26.0"
+  }
+}
