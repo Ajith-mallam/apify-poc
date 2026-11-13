@@ -6,7 +6,7 @@ const http = require('node:http');
 const apify = require('../src/apify');
 const store = require('../src/store');
 const { loadConfig } = require('../src/config');
-const { createServer } = require('../src/server');
+const { createServer } = require('../src/local-server');
 
 const SECRET = 'apify_api_SERVERTESTSECRET999';
 const CODE = 'letmein123';

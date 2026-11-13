@@ -2,7 +2,7 @@
 
 /**
  * Stateless JSON API used by the web UI, both on Vercel (api/*.js) and by the
- * local server (src/server.js). No database and no disk: Apify keeps the run,
+ * local server (src/local-server.js). No database and no disk: Apify keeps the run,
  * and the browser keeps the results (and can download them as a ZIP).
  *
  *   GET  /api/config                      UI settings (+ whether the access code is accepted)

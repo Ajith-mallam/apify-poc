@@ -9,7 +9,7 @@
     "test": "node --test test/",
     "collect": "node src/collect.js",
     "verify": "node src/verify.js",
-    "ui": "node src/server.js"
+    "ui": "node src/local-server.js"
   },
   "license": "UNLICENSED",
   "type": "commonjs",
