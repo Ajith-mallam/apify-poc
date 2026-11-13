@@ -4,7 +4,7 @@
   "outputDirectory": "public",
   "cleanUrls": true,
   "functions": {
-    "api/**": {
+    "api/*.js": {
       "maxDuration": 60,
       "excludeFiles": "{public,test,output}/**"
     }
